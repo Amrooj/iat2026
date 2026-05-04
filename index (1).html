@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IAT 2026">
+<meta name="theme-color" content="#0A0A0F">
+<title>IAT 2026 — Mission Control</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0A0A0F; --bg2:#111118; --bg3:#1A1A24;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#F0EEE8; --text2:rgba(240,238,232,0.55); --text3:rgba(240,238,232,0.28);
+  --green:#22C97A; --green-dim:rgba(34,201,122,0.12); --green-glow:rgba(34,201,122,0.25);
+  --amber:#F5A623; --amber-dim:rgba(245,166,35,0.12);
+  --red:#FF5A5A; --red-dim:rgba(255,90,90,0.12);
+  --blue:#4D9EFF; --blue-dim:rgba(77,158,255,0.12);
+  --purple:#A78BFA;
+  --ph:#4D9EFF; --ch:#22C97A; --ma:#A78BFA; --bi:#F5A623;
+  --mono:'Space Mono',monospace; --sans:'Syne',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;overflow:hidden;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);height:100%;overflow:hidden;display:flex;flex-direction:column;position:fixed;width:100%;top:0;left:0;}
+#app{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(80px + var(--safe-bottom));padding-top:var(--safe-top);-webkit-overflow-scrolling:touch;}
+#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,0.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;background:none;border:none;cursor:pointer;color:var(--text3);font-family:var(--sans);font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;transition:color .2s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn svg{width:20px;height:20px;transition:transform .2s;}
+.nav-btn.active svg{transform:scale(1.1);}
+.screen{display:none;padding:0 16px;animation:fadeUp .3s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin:20px 0 10px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em;}
+.pill-green{background:var(--green-dim);color:var(--green);}
+.pill-amber{background:var(--amber-dim);color:var(--amber);}
+.pill-red{background:var(--red-dim);color:var(--red);}
+.pill-blue{background:var(--blue-dim);color:var(--blue);}
+.pill-purple{background:rgba(167,139,250,0.12);color:var(--purple);}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:12px;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;font-size:14px;letter-spacing:.02em;transition:all .15s;width:100%;}
+.btn:active{transform:scale(0.97);}
+.btn-green{background:var(--green);color:#000;}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border2);}
+.btn-sm{padding:9px 14px;font-size:12px;border-radius:9px;width:auto;}
+/* HOME */
+#home-header{padding:20px 16px 0;display:flex;align-items:flex-start;justify-content:space-between;}
+.home-title{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);}
+.home-day{font-size:48px;font-weight:800;line-height:1;color:var(--text);font-family:var(--mono);}
+.home-day span{font-size:16px;color:var(--text2);font-family:var(--sans);font-weight:500;}
+.countdown-ring{position:relative;width:72px;height:72px;flex-shrink:0;}
+.countdown-ring svg{transform:rotate(-90deg);}
+.countdown-ring .ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-days{font-size:18px;font-weight:800;font-family:var(--mono);line-height:1;}
+.ring-label{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);}
+#mission-card{margin:14px 16px 0;background:linear-gradient(135deg,#111820 0%,#0D1A14 100%);border:1px solid var(--green-glow);border-radius:20px;padding:18px;box-shadow:0 8px 40px rgba(34,201,122,0.1);}
+.mission-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.mission-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);}
+.mission-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:opacity .2s;}
+.mission-item:last-child{border-bottom:none;}
+.mission-item.done{opacity:0.4;}
+.mission-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.mission-item.done .mission-check{background:var(--green);border-color:var(--green);}
+.mission-item-main{font-size:13px;font-weight:600;color:var(--text);}
+.mission-item.done .mission-item-main{color:var(--text3);text-decoration:line-through;}
+.mission-item-sub{font-size:11px;color:var(--text2);margin-top:1px;}
+.quick-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 16px 0;}
+.qs-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 10px;text-align:center;}
+.qs-val{font-size:22px;font-weight:800;font-family:var(--mono);line-height:1;}
+.qs-label{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-top:3px;}
+.subj-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.subj-row:last-child{border-bottom:none;}
+.subj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.subj-name{font-size:12px;font-weight:600;width:80px;flex-shrink:0;}
+.subj-bar-bg{flex:1;height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+.subj-bar{height:4px;border-radius:99px;transition:width .6s ease;}
+.subj-days{font-size:10px;color:var(--text3);font-family:var(--mono);width:36px;text-align:right;flex-shrink:0;}
+/* TIMER */
+.timer-display{text-align:center;padding:30px 0 20px;}
+.timer-big{font-size:72px;font-family:var(--mono);font-weight:700;line-height:1;letter-spacing:-2px;color:var(--text);transition:color .3s;}
+.timer-big.brk{color:var(--amber);}
+.timer-phase{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-top:6px;}
+.timer-progress{height:3px;background:var(--bg3);border-radius:99px;overflow:hidden;margin:16px 0;}
+.timer-progress-fill{height:100%;border-radius:99px;background:var(--green);transition:width 1s linear,background .3s;}
+.timer-progress-fill.brk{background:var(--amber);}
+.subject-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.subj-btn{padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;}
+.subj-btn.sel-ph{border-color:var(--ph);background:rgba(77,158,255,0.1);color:var(--ph);}
+.subj-btn.sel-ch{border-color:var(--ch);background:rgba(34,201,122,0.1);color:var(--ch);}
+.subj-btn.sel-ma{border-color:var(--ma);background:rgba(167,139,250,0.1);color:var(--ma);}
+.subj-btn.sel-bi{border-color:var(--bi);background:rgba(245,166,35,0.1);color:var(--bi);}
+.subj-btn:active{transform:scale(0.96);}
+.mode-row{display:flex;gap:6px;margin-bottom:14px;}
+.mode-btn{flex:1;padding:8px;border-radius:9px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;}
+.mode-btn.active{background:var(--bg3);border-color:var(--border2);color:var(--text);}
+.session-controls{display:flex;gap:10px;margin-top:14px;}
+.btn-circle{width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.btn-circle:active{transform:scale(0.92);}
+.btn-start{flex:1;height:52px;border-radius:16px;background:var(--green);color:#000;border:none;font-family:var(--sans);font-weight:800;font-size:15px;letter-spacing:.03em;cursor:pointer;transition:all .15s;}
+.btn-start:active{transform:scale(0.97);background:#1db86d;}
+.log-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:7px;}
+.log-subj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.log-info{flex:1;}
+.log-main{font-size:12px;font-weight:600;}
+.log-sub{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.log-dur{font-size:12px;font-family:var(--mono);color:var(--text2);}
+.log-del{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex-shrink:0;transition:all .15s;}
+.log-del:active{background:var(--red-dim);color:var(--red);}
+/* PLAN */
+.plan-week{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:10px;}
+.plan-week-header{padding:12px 16px;background:var(--bg3);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.pw-title{font-size:12px;font-weight:700;}
+.pw-sub{font-size:10px;color:var(--text3);}
+.plan-day{display:flex;align-items:flex-start;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);}
+.plan-day:last-child{border-bottom:none;}
+.plan-day.today-row{background:rgba(34,201,122,0.04);}
+.plan-day.done-row{opacity:0.6;}
+.plan-day-num{font-size:11px;font-family:var(--mono);color:var(--text3);width:28px;flex-shrink:0;padding-top:1px;}
+.plan-day-num.today-num{color:var(--green);font-weight:700;}
+.plan-day-num.done-num{color:var(--green);}
+.plan-day-content{flex:1;}
+.plan-day-title{font-size:12px;font-weight:600;margin-bottom:2px;}
+.plan-day-sub{font-size:10px;color:var(--text2);line-height:1.5;}
+.plan-day-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+/* ANALYTICS */
+.subject-score-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+.ssg-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.ssg-subj{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+.ssg-score{font-size:28px;font-weight:800;font-family:var(--mono);line-height:1;}
+.ssg-max{font-size:13px;color:var(--text3);}
+.ssg-bar{height:3px;border-radius:99px;margin-top:8px;background:var(--bg3);overflow:hidden;}
+.ssg-fill{height:100%;border-radius:99px;}
+/* CHECK-IN */
+.checkin-q{font-size:16px;font-weight:700;margin-bottom:16px;line-height:1.4;}
+.mood-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px;}
+.mood-opt{aspect-ratio:1;border-radius:12px;border:1.5px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:22px;}
+.mood-opt.sel{border-color:var(--green);background:var(--green-dim);}
+.mood-opt span{font-size:9px;color:var(--text3);font-weight:600;margin-top:3px;}
+.weak-subject-pick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px;}
+.wsp{padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg2);text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;color:var(--text2);}
+.wsp.sel{border-color:var(--amber);background:var(--amber-dim);color:var(--amber);}
+.checkin-advice{padding:14px;border-radius:14px;font-size:13px;line-height:1.65;margin-top:10px;display:none;}
+.ca-green{background:rgba(34,201,122,0.08);border:1px solid rgba(34,201,122,0.2);color:#7EEFC0;}
+.ca-amber{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);color:#F5C97A;}
+.ca-red{background:rgba(255,90,90,0.08);border:1px solid rgba(255,90,90,0.2);color:#FF9494;}
+/* AI COACH */
+.ai-coach-box{background:linear-gradient(135deg,#0F1119 0%,#0D1320 100%);border:1px solid rgba(77,158,255,0.2);border-radius:16px;padding:16px;margin-top:12px;}
+.ai-coach-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ai-pulse{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ai-coach-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);}
+.ai-chat-history{max-height:300px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
+.ai-msg{font-size:12.5px;line-height:1.7;padding:10px 12px;border-radius:12px;}
+.ai-msg.assistant{background:rgba(77,158,255,0.08);border:1px solid rgba(77,158,255,0.15);color:var(--text2);border-radius:12px 12px 12px 4px;}
+.ai-msg.user{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:12px 12px 4px 12px;font-size:12px;}
+.ai-loading{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.ai-dot-anim{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:dotb 1.2s infinite;}
+.ai-dot-anim:nth-child(2){animation-delay:.2s;}
+.ai-dot-anim:nth-child(3){animation-delay:.4s;}
+@keyframes dotb{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-5px);opacity:1}}
+/* FORMULA */
+.formula-filter-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.filter-btn{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--bg2);color:var(--text3);font-family:var(--sans);transition:all .15s;}
+.filter-btn.active{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.filter-btn.ph-f.active{border-color:var(--ph);color:var(--ph);background:rgba(77,158,255,0.1);}
+.filter-btn.ch-f.active{border-color:var(--ch);color:var(--ch);background:rgba(34,201,122,0.1);}
+.filter-btn.ma-f.active{border-color:var(--ma);color:var(--ma);background:rgba(167,139,250,0.1);}
+.filter-btn.bi-f.active{border-color:var(--bi);color:var(--bi);background:rgba(245,166,35,0.1);}
+.formula-search{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;margin-bottom:12px;}
+.formula-search input{flex:1;background:none;border:none;color:var(--text);font-family:var(--sans);font-size:14px;outline:none;}
+.formula-search input::placeholder{color:var(--text3);}
+.formula-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:7px;display:none;}
+.formula-item.visible{display:block;}
+.formula-eq{font-family:var(--mono);font-size:15px;color:var(--text);margin-bottom:4px;font-weight:700;}
+.formula-name{font-size:11px;color:var(--text2);}
+.formula-tag{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px;float:right;}
+/* SCORE PREDICTOR */
+.pred-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+.pred-inp{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.pred-inp label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px;}
+.pred-inp input{background:none;border:none;color:var(--text);font-family:var(--mono);font-size:22px;font-weight:700;width:100%;outline:none;}
+.pred-result{text-align:center;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;display:none;}
+.pred-total{font-size:52px;font-weight:800;font-family:var(--mono);line-height:1;}
+/* HEATMAP */
+.heatmap{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;}
+.hm-cell{aspect-ratio:1;border-radius:4px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .15s;}
+.hm-cell.done{background:var(--green);border-color:#1db86d;color:#002d17;}
+.hm-cell.partial{background:rgba(245,166,35,0.2);border-color:rgba(245,166,35,0.4);color:var(--amber);}
+.hm-cell.today{box-shadow:0 0 0 2px var(--green);}
+.hm-cell.future{opacity:0.35;}
+/* REVISION */
+.rev-badge{background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.rev-info{flex:1;}
+.rev-topic{font-size:12px;font-weight:600;}
+.rev-due{font-size:10px;color:var(--purple);font-family:var(--mono);}
+.rev-check{width:18px;height:18px;border-radius:5px;border:1.5px solid rgba(167,139,250,0.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;}
+/* MODAL */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:998;display:none;align-items:flex-end;justify-content:center;}
+#modal-overlay.show{display:flex;}
+#modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:24px 24px 0 0;padding:28px 24px calc(32px + var(--safe-bottom));width:100%;animation:slideUp .3s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+#modal-title{font-size:18px;font-weight:800;margin-bottom:8px;}
+#modal-body{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;}
+.modal-btns{display:flex;flex-direction:column;gap:8px;}
+/* TOPIC PROMPT */
+#topic-prompt{position:fixed;bottom:calc(80px + var(--safe-bottom) + 10px);left:16px;right:16px;background:var(--bg2);border:1px solid var(--green-glow);border-radius:16px;padding:14px;z-index:90;display:none;box-shadow:0 8px 40px rgba(34,201,122,0.18);animation:slideUp .3s ease;}
+#topic-prompt.show{display:block;}
+#tp-title{font-size:12px;font-weight:700;color:var(--green);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+#tp-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;margin-bottom:8px;}
+.tp-row{display:flex;gap:8px;}
+/* ONBOARDING */
+#onboarding{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;padding:40px 24px;padding-top:calc(60px + var(--safe-top));overflow-y:auto;}
+.ob-step{display:none;}
+.ob-step.active{display:flex;flex-direction:column;gap:10px;animation:fadeUp .4s ease;}
+.ob-icon{font-size:48px;margin-bottom:8px;}
+.ob-title{font-size:26px;font-weight:800;line-height:1.25;}
+.ob-sub{font-size:14px;color:var(--text2);line-height:1.65;}
+.ob-input{background:var(--bg2);border:1.5px solid var(--border2);border-radius:14px;padding:14px 16px;color:var(--text);font-family:var(--sans);font-size:16px;width:100%;outline:none;margin-top:8px;transition:border-color .2s;}
+.ob-input:focus{border-color:var(--green);}
+.ob-actions{margin-top:auto;padding-top:20px;}
+.ob-progress{display:flex;gap:5px;margin-bottom:20px;}
+.ob-dot{height:3px;border-radius:99px;flex:1;background:var(--bg3);transition:background .3s;}
+.ob-dot.active{background:var(--green);}
+.flex-between{display:flex;align-items:center;justify-content:space-between;}
+::-webkit-scrollbar{width:0;}
+</style>
+</head>
+<body>
+<!-- ONBOARDING -->
+<div id="onboarding">
+  <div class="ob-progress">
+    <div class="ob-dot active" id="od1"></div><div class="ob-dot" id="od2"></div><div class="ob-dot" id="od3"></div>
+  </div>
+  <div class="ob-step active" id="obs-1">
+    <div class="ob-icon">🎯</div>
+    <div class="ob-title">IAT 2026<br>Mission Control</div>
+    <div class="ob-sub">Your personal prep coach for IISER. Not just a tracker — this app tells you exactly what to do each day, holds you accountable, and adjusts when life happens.</div>
+    <div class="ob-sub" style="margin-top:8px">What's your name?</div>
+    <input class="ob-input" id="ob-name" placeholder="e.g. Arjun" maxlength="20">
+    <div class="ob-actions"><button class="btn btn-green" onclick="obNext(1)">Let's go →</button></div>
+  </div>
+  <div class="ob-step" id="obs-2">
+    <div class="ob-icon">📅</div>
+    <div class="ob-title">When did you<br>start prep?</div>
+    <div class="ob-sub">We need this to calculate your exact day number and auto-generate your 40-day mission plan.</div>
+    <input class="ob-input" id="ob-startdate" type="date">
+    <div class="ob-sub" style="margin-top:12px">Your weakest subject right now?</div>
+    <div class="weak-subject-pick" style="margin-top:8px;margin-bottom:0">
+      <div class="wsp" id="wk-ph" onclick="pickWeak('ph')">⚡ Physics</div>
+      <div class="wsp" id="wk-ch" onclick="pickWeak('ch')">🧪 Chemistry</div>
+      <div class="wsp" id="wk-ma" onclick="pickWeak('ma')">📐 Maths</div>
+      <div class="wsp" id="wk-bi" onclick="pickWeak('bi')">🧬 Biology</div>
+    </div>
+    <div class="ob-actions"><button class="btn btn-green" onclick="obNext(2)">Continue →</button></div>
+  </div>
+  <div class="ob-step" id="obs-3">
+    <div class="ob-icon">🔔</div>
+    <div class="ob-title">Enable smart<br>reminders</div>
+    <div class="ob-sub">Daily morning mission briefing, revision nudges, and evening check-in. This is the accountability engine.</div>
+    <div style="margin-top:16px">
+      <button class="btn btn-green" onclick="enableNotifs()">Enable notifications</button>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="skipNotifs()">Skip for now</button>
+    </div>
+    <div class="ob-actions" style="padding-top:12px">
+      <div id="ob-notif-status" style="font-size:12px;color:var(--text3);text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (replaces confirm()) -->
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+
+<!-- TOPIC PROMPT (auto-shows after session ends) -->
+<div id="topic-prompt">
+  <div id="tp-title">✅ Session done! What topic did you cover?</div>
+  <input id="tp-input" placeholder="e.g. Faraday's law, Organic SN2, Limits...">
+  <div class="tp-row">
+    <button class="btn btn-green" style="font-size:12px;padding:9px 14px" onclick="saveTopicFromPrompt()">Save + Schedule Revision</button>
+    <button class="btn btn-ghost" style="font-size:12px;padding:9px 14px;width:auto" onclick="dismissTopicPrompt()">Skip</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div id="home-header">
+    <div>
+      <div class="home-title">IAT 2026 · Mission Control</div>
+      <div class="home-day" id="h-day">—<span> of 40</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)" id="h-sub">— hrs remaining</div>
+    </div>
+    <div class="countdown-ring">
+      <svg viewBox="0 0 72 72" width="72" height="72">
+        <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5"/>
+        <circle cx="36" cy="36" r="30" fill="none" stroke="#22C97A" stroke-width="5"
+          stroke-dasharray="188.5" id="ring-circle" stroke-dashoffset="188.5" stroke-linecap="round"/>
+      </svg>
+      <div class="ring-text"><div class="ring-days" id="ring-days">—</div><div class="ring-label">days</div></div>
+    </div>
+  </div>
+
+  <div id="mission-card">
+    <div class="mission-header">
+      <div class="mission-title">⚡ Today's Mission</div>
+      <div id="mission-date" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></div>
+    </div>
+    <div id="mission-items"></div>
+  </div>
+
+  <div class="quick-stats">
+    <div class="qs-card"><div class="qs-val" id="qs-streak" style="color:var(--green)">0</div><div class="qs-label">Streak</div></div>
+    <div class="qs-card"><div class="qs-val" id="qs-hours">0h</div><div class="qs-label">Today</div></div>
+    <div class="qs-card"><div class="qs-val" id="qs-mocks" style="color:var(--amber)">0</div><div class="qs-label">Mocks</div></div>
+  </div>
+
+  <div class="section-label" style="margin:18px 0 10px">Subject Health</div>
+  <div class="card" style="padding:12px 14px">
+    <div class="subj-row"><div class="subj-dot" style="background:var(--ph)"></div><div class="subj-name" style="color:var(--ph)">Physics</div><div class="subj-bar-bg"><div class="subj-bar" style="background:var(--ph)" id="bar-ph"></div></div><div class="subj-days" id="days-ph">—</div></div>
+    <div class="subj-row"><div class="subj-dot" style="background:var(--ch)"></div><div class="subj-name" style="color:var(--ch)">Chemistry</div><div class="subj-bar-bg"><div class="subj-bar" style="background:var(--ch)" id="bar-ch"></div></div><div class="subj-days" id="days-ch">—</div></div>
+    <div class="subj-row"><div class="subj-dot" style="background:var(--ma)"></div><div class="subj-name" style="color:var(--ma)">Maths</div><div class="subj-bar-bg"><div class="subj-bar" style="background:var(--ma)" id="bar-ma"></div></div><div class="subj-days" id="days-ma">—</div></div>
+    <div class="subj-row"><div class="subj-dot" style="background:var(--bi)"></div><div class="subj-name" style="color:var(--bi)">Biology</div><div class="subj-bar-bg"><div class="subj-bar" style="background:var(--bi)" id="bar-bi"></div></div><div class="subj-days" id="days-bi">—</div></div>
+  </div>
+
+  <div class="section-label" style="margin-top:4px">Revision Due</div>
+  <div id="rev-list"></div>
+
+  <div class="section-label">Quick Score Check</div>
+  <div class="pred-grid">
+    <div class="pred-inp"><label style="color:var(--ph)">Physics /60</label><input type="number" id="qp-ph" placeholder="—" min="0" max="60" oninput="quickPredict()"></div>
+    <div class="pred-inp"><label style="color:var(--ch)">Chemistry /60</label><input type="number" id="qp-ch" placeholder="—" min="0" max="60" oninput="quickPredict()"></div>
+    <div class="pred-inp"><label style="color:var(--ma)">Maths /60</label><input type="number" id="qp-ma" placeholder="—" min="0" max="60" oninput="quickPredict()"></div>
+    <div class="pred-inp"><label style="color:var(--bi)">Biology /60</label><input type="number" id="qp-bi" placeholder="—" min="0" max="60" oninput="quickPredict()"></div>
+  </div>
+  <div class="pred-result" id="pred-result-home"></div>
+  <div style="height:20px"></div>
+</div>
+
+<!-- SESSION -->
+<div class="screen" id="screen-session">
+  <div style="padding-top:16px">
+    <div class="section-label">Study Mode</div>
+    <div class="mode-row">
+      <div class="mode-btn active" onclick="setMode(0,this)">🎯 Deep</div>
+      <div class="mode-btn" onclick="setMode(1,this)">📖 PW</div>
+      <div class="mode-btn" onclick="setMode(2,this)">📝 DPP</div>
+      <div class="mode-btn" onclick="setMode(3,this)">🔁 Revision</div>
+    </div>
+    <div class="section-label">Subject</div>
+    <div class="subject-picker">
+      <button class="subj-btn" id="sj-ph" onclick="pickSubj('ph')">⚡ Physics</button>
+      <button class="subj-btn" id="sj-ch" onclick="pickSubj('ch')">🧪 Chemistry</button>
+      <button class="subj-btn" id="sj-ma" onclick="pickSubj('ma')">📐 Maths</button>
+      <button class="subj-btn" id="sj-bi" onclick="pickSubj('bi')">🧬 Biology</button>
+    </div>
+    <div class="card" style="padding:12px">
+      <div class="timer-display">
+        <div class="timer-big" id="timer-display">50:00</div>
+        <div class="timer-phase" id="timer-phase">READY TO START</div>
+      </div>
+      <div class="timer-progress"><div class="timer-progress-fill" id="timer-bar" style="width:100%"></div></div>
+      <div class="session-controls">
+        <div class="btn-circle" onclick="resetSession()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+        </div>
+        <button class="btn-start" id="btn-start-stop" onclick="toggleSession()">START SESSION</button>
+        <div class="btn-circle" onclick="skipPhase()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 4px 0;font-size:10px;color:var(--text3);font-family:var(--mono)">
+        <span>Sessions: <span id="t-sessions" style="color:var(--green)">0</span></span>
+        <span>Focus: <span id="t-focus" style="color:var(--green)">0 min</span></span>
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:4px">Duration</div>
+    <div class="mode-row">
+      <div class="mode-btn active" id="dur-0" onclick="setDuration(50,10,0)">50+10</div>
+      <div class="mode-btn" id="dur-1" onclick="setDuration(90,15,1)">90+15</div>
+      <div class="mode-btn" id="dur-2" onclick="setDuration(25,5,2)">25+5</div>
+    </div>
+    <div class="section-label" style="margin-top:4px">Mark Topic Done</div>
+    <div class="card" style="padding:12px">
+      <input class="ob-input" id="topic-done-input" placeholder="Topic covered e.g. EMI, Organic SN2..." style="margin-top:0;font-size:13px;padding:10px 12px">
+      <button class="btn btn-ghost" style="margin-top:8px;font-size:12px" onclick="markTopicDone()">✓ Save + schedule revision (+3/+7/+14 days)</button>
+    </div>
+    <div class="section-label" style="margin-top:4px">Session Log — Today</div>
+    <div id="session-log-list"></div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- PLAN -->
+<div class="screen" id="screen-plan">
+  <div style="padding-top:16px">
+    <div class="section-label">40-Day Battle Plan</div>
+    <div class="card" style="padding:12px;background:linear-gradient(135deg,#0D1A14,#111820)">
+      <div style="font-size:11px;color:var(--text2);line-height:1.6">P1 topics first · Mock from Week 3 · Revision loops +3/+7/+14 · Bio daily · Never skip DPP · ✓ = you actually studied that date</div>
+    </div>
+    <div id="plan-list"></div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="screen" id="screen-analytics">
+  <div style="padding-top:16px">
+    <div class="section-label">Progress Overview</div>
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px">Total Hours</div>
+          <div style="font-size:36px;font-weight:800;font-family:var(--mono)" id="an-hours">0</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px">On Track</div>
+          <div style="font-size:36px;font-weight:800;font-family:var(--mono)" id="an-track">—</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Hours per day (last 10)</div>
+      <div id="hours-bars" style="display:flex;align-items:flex-end;gap:4px;height:60px"></div>
+    </div>
+    <div class="section-label" style="margin-top:4px">Subject Scores (last mock)</div>
+    <div class="subject-score-grid">
+      <div class="ssg-card"><div class="ssg-subj" style="color:var(--ph)">Physics</div><div><span class="ssg-score" id="sc-ph" style="color:var(--ph)">—</span><span class="ssg-max">/60</span></div><div class="ssg-bar"><div class="ssg-fill" style="background:var(--ph)" id="scb-ph"></div></div></div>
+      <div class="ssg-card"><div class="ssg-subj" style="color:var(--ch)">Chemistry</div><div><span class="ssg-score" id="sc-ch" style="color:var(--ch)">—</span><span class="ssg-max">/60</span></div><div class="ssg-bar"><div class="ssg-fill" style="background:var(--ch)" id="scb-ch"></div></div></div>
+      <div class="ssg-card"><div class="ssg-subj" style="color:var(--ma)">Maths</div><div><span class="ssg-score" id="sc-ma" style="color:var(--ma)">—</span><span class="ssg-max">/60</span></div><div class="ssg-bar"><div class="ssg-fill" style="background:var(--ma)" id="scb-ma"></div></div></div>
+      <div class="ssg-card"><div class="ssg-subj" style="color:var(--bi)">Biology</div><div><span class="ssg-score" id="sc-bi" style="color:var(--bi)">—</span><span class="ssg-max">/60</span></div><div class="ssg-bar"><div class="ssg-fill" style="background:var(--bi)" id="scb-bi"></div></div></div>
+    </div>
+    <div class="section-label" style="margin-top:4px">Mock History</div>
+    <div class="card"><div id="mock-log-list" style="font-size:12px;color:var(--text2)">No mocks logged yet.</div></div>
+    <div class="section-label" style="margin-top:4px">Log New Mock</div>
+    <div class="card">
+      <div class="pred-grid" style="margin-bottom:8px">
+        <div class="pred-inp"><label style="color:var(--ph)">Physics /60</label><input type="number" id="mp-ph" placeholder="—" min="0" max="60"></div>
+        <div class="pred-inp"><label style="color:var(--ch)">Chem /60</label><input type="number" id="mp-ch" placeholder="—" min="0" max="60"></div>
+        <div class="pred-inp"><label style="color:var(--ma)">Maths /60</label><input type="number" id="mp-ma" placeholder="—" min="0" max="60"></div>
+        <div class="pred-inp"><label style="color:var(--bi)">Bio /60</label><input type="number" id="mp-bi" placeholder="—" min="0" max="60"></div>
+      </div>
+      <button class="btn btn-green" onclick="logMock()">Save Mock Score</button>
+    </div>
+    <div class="section-label" style="margin-top:4px">Study Heatmap</div>
+    <div class="card" style="padding:12px">
+      <div class="heatmap" id="heatmap"></div>
+      <div style="display:flex;gap:12px;margin-top:10px;font-size:9px;color:var(--text3)">
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>6h+</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(245,166,35,0.3);border:1px solid var(--amber);display:inline-block"></span>Partial</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:var(--bg3);display:inline-block"></span>None/Future</span>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- COACH -->
+<div class="screen" id="screen-coach">
+  <div style="padding-top:16px">
+    <div class="section-label">Evening Check-in</div>
+    <div class="card">
+      <div class="checkin-q">How was today?</div>
+      <div class="mood-grid">
+        <div class="mood-opt" onclick="setMood(5,this)">🔥<span>Peak</span></div>
+        <div class="mood-opt" onclick="setMood(4,this)">💪<span>Good</span></div>
+        <div class="mood-opt" onclick="setMood(3,this)">😐<span>Okay</span></div>
+        <div class="mood-opt" onclick="setMood(2,this)">😓<span>Tired</span></div>
+        <div class="mood-opt" onclick="setMood(1,this)">🥴<span>Burnt</span></div>
+      </div>
+      <div class="checkin-q" style="font-size:13px">Which subject needs extra time tomorrow?</div>
+      <div class="weak-subject-pick">
+        <div class="wsp" id="ci-ph" onclick="pickFocus('ph',this)">⚡ Physics</div>
+        <div class="wsp" id="ci-ch" onclick="pickFocus('ch',this)">🧪 Chemistry</div>
+        <div class="wsp" id="ci-ma" onclick="pickFocus('ma',this)">📐 Maths</div>
+        <div class="wsp" id="ci-bi" onclick="pickFocus('bi',this)">🧬 Biology</div>
+      </div>
+      <div class="checkin-q" style="font-size:13px">Completed PW lecture today?</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-ghost btn-sm" id="pw-yes" onclick="setPW(true)">✓ Yes</button>
+        <button class="btn btn-ghost btn-sm" id="pw-no" onclick="setPW(false)">✗ No</button>
+        <button class="btn btn-ghost btn-sm" id="pw-partial" onclick="setPW('partial')">~ Partial</button>
+      </div>
+      <button class="btn btn-green" onclick="submitCheckin()">Submit &amp; Get Tomorrow's Plan</button>
+      <div class="checkin-advice" id="checkin-advice"></div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px;display:flex;align-items:center;justify-content:space-between">
+      <span>AI Coach</span>
+      <button onclick="clearChat()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:var(--sans);text-decoration:underline">Clear chat</button>
+    </div>
+    <div class="ai-coach-box">
+      <div class="ai-coach-header">
+        <div class="ai-pulse"></div>
+        <div class="ai-coach-title">Powered by Claude · Remembers context</div>
+      </div>
+      <div class="ai-chat-history" id="ai-chat-history">
+        <div class="ai-msg assistant">Ask me anything about your prep — strategy, motivation, specific topics, what to prioritise today.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input id="ai-input" placeholder="Ask your coach..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;min-width:0" onkeydown="if(event.key==='Enter')askCoach()">
+        <button class="btn btn-green" style="width:auto;padding:9px 16px;font-size:13px" onclick="askCoach()">Ask</button>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;font-weight:700;letter-spacing:.06em">QUICK QUESTIONS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="quickAsk('What should I study right now?')">What to study?</button>
+          <button class="btn btn-ghost btn-sm" onclick="quickAsk('Am I on track for IAT 2026?')">Am I on track?</button>
+          <button class="btn btn-ghost btn-sm" onclick="quickAsk('Give me a motivation boost')">Motivate me</button>
+          <button class="btn btn-ghost btn-sm" onclick="quickAsk('What are the highest-yield IAT topics?')">High yield topics</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px">Formula Vault</div>
+    <div class="formula-filter-row">
+      <button class="filter-btn active" onclick="setFormulaFilter('all',this)">All</button>
+      <button class="filter-btn ph-f" onclick="setFormulaFilter('ph',this)">⚡ Physics</button>
+      <button class="filter-btn ch-f" onclick="setFormulaFilter('ch',this)">🧪 Chemistry</button>
+      <button class="filter-btn ma-f" onclick="setFormulaFilter('ma',this)">📐 Maths</button>
+      <button class="filter-btn bi-f" onclick="setFormulaFilter('bi',this)">🧬 Biology</button>
+    </div>
+    <div class="formula-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text3)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input placeholder="Search formulas, topics, tags..." oninput="searchFormulas(this.value)" id="formula-inp">
+    </div>
+    <div id="formula-list"></div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+</div><!-- end #app -->
+
+<!-- BOTTOM NAV -->
+<nav id="nav">
+  <button class="nav-btn active" id="nav-home" onclick="goScreen('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+  </button>
+  <button class="nav-btn" id="nav-session" onclick="goScreen('session')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Session
+  </button>
+  <button class="nav-btn" id="nav-plan" onclick="goScreen('plan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Plan
+  </button>
+  <button class="nav-btn" id="nav-analytics" onclick="goScreen('analytics')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats
+  </button>
+  <button class="nav-btn" id="nav-coach" onclick="goScreen('coach')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Coach
+  </button>
+</nav>
+<script>
+// ═══ STATE ═══
+const EXAM_DATE = new Date('2026-06-07T09:00:00');
+let S = {};
+function loadState(){
+  try{S=JSON.parse(localStorage.getItem('iat2026_v3')||'{}');}catch(e){S={};}
+  S.name=S.name||''; S.startDate=S.startDate||'2026-04-29'; S.weakSubj=S.weakSubj||'bi';
+  S.sessions=S.sessions||{}; S.mocks=S.mocks||[]; S.missions=S.missions||{};
+  S.topics=S.topics||[]; S.checkins=S.checkins||{}; S.notifs=S.notifs||false;
+  S.onboarded=S.onboarded||false; S.focusTomorrow=S.focusTomorrow||'';
+  S.chatHistory=S.chatHistory||[];
+}
+function save(){localStorage.setItem('iat2026_v3',JSON.stringify(S));}
+const todayStr=new Date().toISOString().split('T')[0];
+function getDayNum(){return Math.max(1,Math.round((new Date(todayStr)-new Date(S.startDate))/86400000)+1);}
+function getDaysLeft(){return Math.max(0,Math.ceil((EXAM_DATE-new Date())/86400000));}
+function getTodayHours(){return(S.sessions[todayStr]||[]).reduce((a,b)=>a+(b.mins||0),0)/60;}
+function getStreak(){
+  let streak=0,d=new Date(todayStr);
+  while(true){
+    const ds=d.toISOString().split('T')[0];
+    const hrs=(S.sessions[ds]||[]).reduce((a,b)=>a+(b.mins||0),0)/60;
+    if(hrs>=4||(ds===todayStr&&hrs>0)){streak++;d.setDate(d.getDate()-1);}else break;
+  }
+  return streak;
+}
+function getLastStudied(subj){
+  const days=Object.keys(S.sessions).sort().reverse();
+  for(const d of days){if(S.sessions[d].some(s=>s.subj===subj))return d;}
+  return null;
+}
+function daysSince(ds){if(!ds)return 99;return Math.round((new Date(todayStr)-new Date(ds))/86400000);}
+
+// ═══ MODAL ═══
+function showModal(title,body,buttons){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').textContent=body;
+  const btns=document.getElementById('modal-btns');
+  btns.innerHTML='';
+  buttons.forEach(b=>{
+    const el=document.createElement('button');
+    el.className='btn '+(b.primary?'btn-green':'btn-ghost');
+    el.textContent=b.label;
+    el.onclick=()=>{closeModal();b.action();};
+    btns.appendChild(el);
+  });
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('show');}
+
+// ═══ ONBOARDING ═══
+let obWeak='',obStep=1;
+function obNext(step){
+  if(step===1){const n=document.getElementById('ob-name').value.trim();if(!n)return;S.name=n;save();}
+  if(step===2){
+    const sd=document.getElementById('ob-startdate').value;if(!sd)return;
+    S.startDate=sd;if(!obWeak)return;S.weakSubj=obWeak;save();
+  }
+  obStep++;
+  document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ob-dot').forEach((d,i)=>d.classList.toggle('active',i<obStep));
+  const nx=document.getElementById('obs-'+obStep);if(nx)nx.classList.add('active');
+}
+function pickWeak(s){obWeak=s;['ph','ch','ma','bi'].forEach(x=>document.getElementById('wk-'+x).classList.toggle('sel',x===s));}
+async function enableNotifs(){
+  const st=document.getElementById('ob-notif-status');
+  if(!('Notification'in window)){st.textContent='Not supported on this device.';return;}
+  const p=await Notification.requestPermission();
+  if(p==='granted'){S.notifs=true;save();st.textContent='✓ Enabled!';setTimeout(finishOnboarding,1000);}
+  else{st.textContent='Denied. Enable later in phone settings.';}
+}
+function skipNotifs(){finishOnboarding();}
+function finishOnboarding(){S.onboarded=true;save();document.getElementById('onboarding').style.display='none';initApp();}
+
+// ═══ 40-DAY PLAN DATA ═══
+const PLAN=[
+  {d:1,title:'Physics: Modern Physics',sub:'Photoelectric effect, de Broglie, Bohr model',tags:['P1','PW'],w:1},
+  {d:2,title:'Physics: Electrostatics',sub:'Coulomb\'s law, Electric field, Gauss law, Potential',tags:['P1'],w:1},
+  {d:3,title:'Chemistry: Organic Mechanisms',sub:'SN1/SN2, Elimination, Markovnikov, reagents',tags:['P1','PW'],w:1},
+  {d:4,title:'Chemistry: Kinetics + Thermodynamics',sub:'Rate laws, Arrhenius, Gibbs, Hess\'s law',tags:['P1'],w:1},
+  {d:5,title:'Maths: Calculus — Limits & Derivatives',sub:'All standard limits, chain rule, product rule, L\'Hôpital',tags:['P1','PW'],w:1},
+  {d:6,title:'Maths: Integration',sub:'Definite, indefinite, by parts, substitution, standard forms',tags:['P1'],w:1},
+  {d:7,title:'Biology: Genetics — Mendelian',sub:'Monohybrid, dihybrid, codominance, linkage, blood groups',tags:['P1','PW'],w:1},
+  {d:8,title:'Physics: Current Electricity',sub:'Kirchhoff\'s laws, Wheatstone bridge, RC circuits',tags:['P1','PW'],w:2},
+  {d:9,title:'Physics: EMI + AC Circuits',sub:'Faraday\'s law, Lenz, inductance, LCR, transformers',tags:['P1'],w:2},
+  {d:10,title:'Chemistry: Electrochemistry',sub:'Nernst equation, EMF, electrolysis, Faraday\'s laws',tags:['P1','PW'],w:2},
+  {d:11,title:'Chemistry: Solid State',sub:'Crystal structures, Bravais lattices, radius ratio, defects',tags:['P1'],w:2},
+  {d:12,title:'Maths: Probability + Combinatorics',sub:'Bayes, binomial distribution, PnC, conditional probability',tags:['P1','PW'],w:2},
+  {d:13,title:'Maths: Complex Numbers + Quadratics',sub:'Modulus-argument, Euler\'s formula, Vieta, discriminant',tags:['P1'],w:2},
+  {d:14,title:'Biology: Cell Division + Human Physiology',sub:'Mitosis/meiosis, nervous system, endocrine system',tags:['P1','PW'],w:2},
+  {d:15,title:'Physics: Mechanics Revision',sub:'Rotational motion, momentum, energy — all PYQs',tags:['P1','Revision'],w:3},
+  {d:16,title:'Chemistry: Organic — Name Reactions',sub:'Aldol, Cannizzaro, Sandmeyer, Reimer-Tiemann, mechanism each',tags:['P1'],w:3},
+  {d:17,title:'Maths: Vectors + 3D Geometry',sub:'Dot/cross product, planes, lines, shortest distance',tags:['P2','PW'],w:3},
+  {d:18,title:'Biology: Biotechnology + Plant Physiology',sub:'PCR, gel electrophoresis, photosynthesis pathways, C3/C4',tags:['P2'],w:3},
+  {d:19,title:'Physics: Optics',sub:'Refraction, lenses, YDSE, interference, diffraction, TIR',tags:['P2','PW'],w:3},
+  {d:20,title:'🧪 MOCK TEST #1',sub:'3h full paper · No phone · No breaks · Real conditions',tags:['MOCK','⚡Key'],w:3},
+  {d:21,title:'Mock 1 Analysis Day',sub:'Tag C/W/S per question · Find concept gaps · Error notebook',tags:['Analysis'],w:3},
+  {d:22,title:'Chemistry: Equilibrium + Bonding',sub:'Le Chatelier, Kp/Kc, VSEPR, hybridisation, MO theory',tags:['P2','PW'],w:4},
+  {d:23,title:'Physics: Thermodynamics + Oscillations',sub:'Carnot cycle, entropy, SHM equations, damping, resonance',tags:['P2'],w:4},
+  {d:24,title:'Maths: Conics + Trigonometry',sub:'Ellipse, hyperbola, parabola — parametric forms, trig identities',tags:['P2','PW'],w:4},
+  {d:25,title:'Biology: Ecology + Evolution',sub:'Food webs, carbon cycle, Darwinism, Hardy-Weinberg, speciation',tags:['P2'],w:4},
+  {d:26,title:'Chemistry: p-Block + Coordination',sub:'Group 15/16/17/18, Werner theory, CFSE, spectrochemical series',tags:['P2','PW'],w:4},
+  {d:27,title:'Maths: Matrices + Determinants',sub:'Rank, inverse, Cramer\'s rule, eigenvalues basics',tags:['P2'],w:4},
+  {d:28,title:'🧪 MOCK TEST #2',sub:'3h full paper · Compare with Mock 1 · Track trajectory',tags:['MOCK','⚡Key'],w:4},
+  {d:29,title:'Mock 2 Analysis + P1 Mega Revision',sub:'Fix every wrong answer · Re-do all P1 DPPs',tags:['Analysis','Revision'],w:5},
+  {d:30,title:'Physics: Waves + Thermodynamics',sub:'Standing waves, Doppler, adiabatic processes, heat transfer',tags:['P2','Revision'],w:5},
+  {d:31,title:'Chemistry: Full Organic Revision',sub:'All mechanisms, name reactions, NCERT examples only',tags:['Revision'],w:5},
+  {d:32,title:'Maths: Calculus Applications',sub:'Maxima/minima, area under curve, differential equations',tags:['P1','Revision'],w:5},
+  {d:33,title:'Biology: Genetics + Biotechnology Full Revision',sub:'All PYQ Biology from last 5 years · NCERT line by line',tags:['P1','PYQ'],w:5},
+  {d:34,title:'🧪 MOCK TEST #3',sub:'45 attempts minimum · No random guessing · Race the clock',tags:['MOCK','⚡Key'],w:5},
+  {d:35,title:'Mock 3 Analysis + Weak Subject Blitz',sub:'Whatever Mock 3 flags as weak — 8h on that today',tags:['Analysis'],w:5},
+  {d:36,title:'P1 Only — Formula Sprint',sub:'No new topics · Only P1 · Speed drills · Error notebook review',tags:['P1','Final'],w:6},
+  {d:37,title:'🧪 MOCK TEST #4',sub:'Full paper · Aim for personal best · Time management rehearsal',tags:['MOCK','Final'],w:6},
+  {d:38,title:'Mock 4 Analysis + Light Revision',sub:'Only fix critical errors · No new content',tags:['Analysis','Final'],w:6},
+  {d:39,title:'NCERT Examples — All 4 Subjects',sub:'Every worked example · Bio: chapter summaries only',tags:['Final'],w:6},
+  {d:40,title:'Rest + Mental Prep',sub:'Light formula review · Sleep 8h · Eat well · You\'re ready.',tags:['Final','🧘Rest'],w:6},
+];
+// ═══ FORMULA VAULT (80+ formulas) ═══
+const FORMULAS=[
+  {eq:'E = hf = hc/λ',name:'Photon energy',subj:'ph',tag:'Modern Physics'},
+  {eq:'λ = h/mv',name:'de Broglie wavelength',subj:'ph',tag:'Modern Physics'},
+  {eq:'Eₙ = −13.6/n² eV',name:'Hydrogen energy levels (Bohr)',subj:'ph',tag:'Modern Physics'},
+  {eq:'KE_max = hf − φ',name:'Photoelectric effect',subj:'ph',tag:'Modern Physics'},
+  {eq:'1/λ = R(1/n₁² − 1/n₂²)',name:'Rydberg formula',subj:'ph',tag:'Modern Physics'},
+  {eq:'Δx·Δp ≥ ℏ/2',name:'Heisenberg uncertainty principle',subj:'ph',tag:'Modern Physics'},
+  {eq:'F = kq₁q₂/r²',name:"Coulomb's law",subj:'ph',tag:'Electrostatics'},
+  {eq:'E = kq/r²',name:'Electric field (point charge)',subj:'ph',tag:'Electrostatics'},
+  {eq:'V = kq/r',name:'Electric potential',subj:'ph',tag:'Electrostatics'},
+  {eq:'C = ε₀A/d',name:'Parallel plate capacitance',subj:'ph',tag:'Electrostatics'},
+  {eq:'U = ½CV² = Q²/2C',name:'Energy stored in capacitor',subj:'ph',tag:'Electrostatics'},
+  {eq:'V = E − Ir',name:'Terminal voltage',subj:'ph',tag:'Current Electricity'},
+  {eq:'R = ρL/A',name:'Resistance formula',subj:'ph',tag:'Current Electricity'},
+  {eq:'P = VI = I²R = V²/R',name:'Power dissipation',subj:'ph',tag:'Current Electricity'},
+  {eq:'1/R_p = 1/R₁ + 1/R₂ + ...',name:'Parallel resistors',subj:'ph',tag:'Current Electricity'},
+  {eq:'ε = −dΦ/dt',name:"Faraday's law of EMI",subj:'ph',tag:'EMI'},
+  {eq:'Φ = LI → ε = −L(dI/dt)',name:'Self inductance EMF',subj:'ph',tag:'EMI'},
+  {eq:'XL = ωL = 2πfL',name:'Inductive reactance',subj:'ph',tag:'AC Circuits'},
+  {eq:'XC = 1/ωC = 1/(2πfC)',name:'Capacitive reactance',subj:'ph',tag:'AC Circuits'},
+  {eq:'Z = √(R² + (XL−XC)²)',name:'Impedance of LCR series',subj:'ph',tag:'AC Circuits'},
+  {eq:'f_res = 1/(2π√LC)',name:'Resonant frequency',subj:'ph',tag:'AC Circuits'},
+  {eq:'V_rms = V₀/√2, I_rms = I₀/√2',name:'RMS values',subj:'ph',tag:'AC Circuits'},
+  {eq:'1/f = (μ−1)(1/R₁ − 1/R₂)',name:"Lensmaker's equation",subj:'ph',tag:'Optics'},
+  {eq:'Δx = λD/d',name:'Fringe width (YDSE)',subj:'ph',tag:'Optics'},
+  {eq:'1/v − 1/u = 1/f',name:'Mirror/lens formula',subj:'ph',tag:'Optics'},
+  {eq:'μ = sin i / sin r',name:"Snell's law",subj:'ph',tag:'Optics'},
+  {eq:'sin θ_c = 1/μ',name:'Critical angle (TIR)',subj:'ph',tag:'Optics'},
+  {eq:'F = qv×B',name:'Lorentz magnetic force',subj:'ph',tag:'Magnetism'},
+  {eq:'B = μ₀I/2πr',name:'Magnetic field (long wire)',subj:'ph',tag:'Magnetism'},
+  {eq:'F = BIL sinθ',name:'Force on current-carrying wire',subj:'ph',tag:'Magnetism'},
+  {eq:'τ = Iα',name:"Rotational Newton's 2nd law",subj:'ph',tag:'Mechanics'},
+  {eq:'L = Iω = mvr',name:'Angular momentum',subj:'ph',tag:'Mechanics'},
+  {eq:'KE_rot = ½Iω²',name:'Rotational kinetic energy',subj:'ph',tag:'Mechanics'},
+  {eq:'v² = u² + 2as',name:'Kinematic equation 3',subj:'ph',tag:'Mechanics'},
+  {eq:'PV = nRT',name:'Ideal gas law',subj:'ph',tag:'Thermodynamics'},
+  {eq:'η = 1 − T_c/T_h',name:'Carnot efficiency',subj:'ph',tag:'Thermodynamics'},
+  {eq:'ΔU = Q − W',name:'First law of thermodynamics',subj:'ph',tag:'Thermodynamics'},
+  {eq:'x = A sin(ωt + φ)',name:'SHM displacement',subj:'ph',tag:'Oscillations'},
+  {eq:'T = 2π√(m/k) = 2π√(L/g)',name:'Period of SHM',subj:'ph',tag:'Oscillations'},
+  {eq:'f_obs = f · (v±v_o)/(v∓v_s)',name:'Doppler effect',subj:'ph',tag:'Waves'},
+  {eq:'k = Ae^(−Ea/RT)',name:'Arrhenius equation',subj:'ch',tag:'Kinetics'},
+  {eq:'r = k[A]^m[B]^n',name:'Rate law expression',subj:'ch',tag:'Kinetics'},
+  {eq:'t½ = 0.693/k',name:'Half-life (first order)',subj:'ch',tag:'Kinetics'},
+  {eq:'ln[A]t = ln[A]₀ − kt',name:'First-order integrated rate',subj:'ch',tag:'Kinetics'},
+  {eq:'ΔG = ΔH − TΔS',name:'Gibbs free energy',subj:'ch',tag:'Thermodynamics'},
+  {eq:'ΔG° = −RT ln K = −nFE°',name:'ΔG° and equilibrium',subj:'ch',tag:'Thermodynamics'},
+  {eq:'ΔH_rxn = ΣΔHf(P) − ΣΔHf(R)',name:"Hess's law",subj:'ch',tag:'Thermodynamics'},
+  {eq:'E = E° − (0.0592/n)log Q at 25°C',name:'Nernst equation (simplified)',subj:'ch',tag:'Electrochemistry'},
+  {eq:'ΔG° = −nFE°cell',name:'ΔG° from EMF',subj:'ch',tag:'Electrochemistry'},
+  {eq:'m = (M×I×t)/(n×F)',name:"Faraday's electrolysis law",subj:'ch',tag:'Electrochemistry'},
+  {eq:'Kp = Kc(RT)^Δn',name:'Kp and Kc relation',subj:'ch',tag:'Equilibrium'},
+  {eq:'pH = pKa + log([A⁻]/[HA])',name:'Henderson-Hasselbalch',subj:'ch',tag:'Acid-Base'},
+  {eq:'Ka × Kb = Kw = 10⁻¹⁴',name:'Kw and conjugate pairs',subj:'ch',tag:'Acid-Base'},
+  {eq:'ρ = ZM/(NA·a³)',name:'Density of crystal unit cell',subj:'ch',tag:'Solid State'},
+  {eq:'r⁺/r⁻: tetrahedral 0.225–0.414; octahedral 0.414–0.732',name:'Radius ratio rules',subj:'ch',tag:'Solid State'},
+  {eq:'ΔTb = iKb·m ; ΔTf = iKf·m',name:'Boiling/freezing point change',subj:'ch',tag:'Solutions'},
+  {eq:'π = iCRT',name:'Osmotic pressure',subj:'ch',tag:'Solutions'},
+  {eq:'d/dx(xⁿ) = nxⁿ⁻¹',name:'Power rule',subj:'ma',tag:'Calculus'},
+  {eq:'d/dx(eˣ) = eˣ; d/dx(ln x) = 1/x',name:'Exp and log derivatives',subj:'ma',tag:'Calculus'},
+  {eq:'∫u·dv = uv − ∫v·du',name:'Integration by parts',subj:'ma',tag:'Calculus'},
+  {eq:'lim(x→0) sinx/x = 1; lim(x→0) (eˣ−1)/x = 1',name:'Standard limits',subj:'ma',tag:'Calculus'},
+  {eq:"f'(x)=0, f''(x)>0 → min; f''(x)<0 → max",name:'Second derivative test',subj:'ma',tag:'Calculus'},
+  {eq:'P(A|B) = P(A∩B)/P(B)',name:'Conditional probability',subj:'ma',tag:'Probability'},
+  {eq:'P(A∪B) = P(A)+P(B)−P(A∩B)',name:'Addition theorem',subj:'ma',tag:'Probability'},
+  {eq:'P(Aᵢ|B) = P(B|Aᵢ)P(Aᵢ)/ΣP(B|Aⱼ)P(Aⱼ)',name:"Bayes' theorem",subj:'ma',tag:'Probability'},
+  {eq:'nCr = n!/r!(n−r)! ; nPr = n!/(n−r)!',name:'Combinations and Permutations',subj:'ma',tag:'Combinatorics'},
+  {eq:'x = (−b ± √(b²−4ac))/2a',name:'Quadratic formula',subj:'ma',tag:'Algebra'},
+  {eq:'Sum=−b/a, Product=c/a',name:"Vieta's formulas (quadratic)",subj:'ma',tag:'Algebra'},
+  {eq:'eⁱθ = cosθ + i·sinθ',name:"Euler's formula",subj:'ma',tag:'Complex Numbers'},
+  {eq:'a·b = |a||b|cosθ; |a×b| = |a||b|sinθ',name:'Dot and cross product',subj:'ma',tag:'Vectors'},
+  {eq:'d = |ax₁+by₁+cz₁+d|/√(a²+b²+c²)',name:'Point to plane distance',subj:'ma',tag:'3D Geometry'},
+  {eq:'x²/a² + y²/b² = 1',name:'Ellipse standard form',subj:'ma',tag:'Conics'},
+  {eq:'x²/a² − y²/b² = 1',name:'Hyperbola standard form',subj:'ma',tag:'Conics'},
+  {eq:'y² = 4ax (focus: (a,0))',name:'Parabola standard form',subj:'ma',tag:'Conics'},
+  {eq:'A⁻¹ = adj(A)/det(A)',name:'Matrix inverse',subj:'ma',tag:'Matrices'},
+  {eq:'2ⁿ = gamete types for n heterozygous loci',name:'Gamete formula',subj:'bi',tag:'Genetics'},
+  {eq:'Monohybrid F2: 3:1 phenotypic',name:'Mendelian monohybrid ratio',subj:'bi',tag:'Genetics'},
+  {eq:'Dihybrid F2: 9:3:3:1',name:'Dihybrid ratio',subj:'bi',tag:'Genetics'},
+  {eq:'χ² = Σ(O−E)²/E',name:'Chi-square test',subj:'bi',tag:'Genetics'},
+  {eq:'p² + 2pq + q² = 1; p + q = 1',name:'Hardy-Weinberg equilibrium',subj:'bi',tag:'Genetics'},
+  {eq:'6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂',name:'Photosynthesis net equation',subj:'bi',tag:'Plant Physiology'},
+  {eq:'C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP',name:'Aerobic respiration net yield',subj:'bi',tag:'Cell Biology'},
+  {eq:'copies = 2ⁿ after n PCR cycles',name:'PCR amplification formula',subj:'bi',tag:'Biotechnology'},
+  {eq:'GPP − R = NPP',name:'Net primary productivity',subj:'bi',tag:'Ecology'},
+  {eq:'dN/dt = rN(K−N)/K',name:'Logistic growth (Verhulst)',subj:'bi',tag:'Ecology'},
+];
+// ═══ MISSION ENGINE ═══
+function getMissions(dayNum){
+  const p=PLAN.find(x=>x.d===dayNum);
+  const m=[];
+  if(p) m.push({text:p.title,sub:p.sub,type:'study'});
+  else m.push({text:'Exam prep: revision + formula sprint',sub:'Final days — stay focused',type:'study'});
+  const due=getRevisionDue();
+  if(due) m.push({text:'Revise: '+due.topic,sub:due.subj.toUpperCase()+' spaced revision due today',type:'revision'});
+  else m.push({text:"Complete today's DPP",sub:'45 min max · mark score · log mistakes in error book',type:'dpp'});
+  const f=S.focusTomorrow||S.weakSubj;
+  const sn={ph:'Physics',ch:'Chemistry',ma:'Maths',bi:'Biology'};
+  const lastBio=daysSince(getLastStudied('bi'));
+  if(lastBio>1&&f!=='bi') m.push({text:'Biology: '+lastBio+'d since last session',sub:'Daily Bio is non-negotiable — even 30 min counts',type:'alert'});
+  else m.push({text:sn[f]+' — extra focus today',sub:'Your flagged subject. Give it 1 extra hour.',type:'focus'});
+  return m;
+}
+function getRevisionDue(){
+  const today=new Date(todayStr);
+  for(const t of S.topics){
+    for(let i=0;i<t.revDates.length;i++){
+      if(!t.revDone[i]&&new Date(t.revDates[i])<=today)return t;
+    }
+  }
+  return null;
+}
+
+// ═══ TIMER — Page Visibility API for persistence ═══
+const T={study:50,brk:10,secs:3000,max:3000,running:false,iv:null,isBreak:false,sessions:0,focusMin:0,subj:'',mode:0,wallStart:null,secsAtPause:0};
+
+document.addEventListener('visibilitychange',()=>{
+  if(!T.running)return;
+  if(document.hidden){
+    T.wallStart=Date.now();T.secsAtPause=T.secs;
+    clearInterval(T.iv);
+  }else{
+    if(T.wallStart){
+      const elapsed=Math.round((Date.now()-T.wallStart)/1000);
+      T.secs=Math.max(0,T.secsAtPause-elapsed);
+      T.wallStart=null;
+      renderTimer();
+      if(T.secs===0)handlePhaseEnd();
+      else T.iv=setInterval(tickTimer,1000);
+    }
+  }
+});
+
+function tickTimer(){
+  if(T.secs>0){T.secs--;renderTimer();}
+  else{clearInterval(T.iv);T.running=false;handlePhaseEnd();}
+}
+function handlePhaseEnd(){
+  document.getElementById('btn-start-stop').textContent='START SESSION';
+  if(!T.isBreak){
+    T.sessions++;T.focusMin+=T.study;
+    document.getElementById('t-sessions').textContent=T.sessions;
+    document.getElementById('t-focus').textContent=T.focusMin+' min';
+    logSession(T.subj,T.mode,T.study);
+    T.isBreak=true;T.secs=T.brk*60;T.max=T.brk*60;
+    if('vibrate'in navigator)navigator.vibrate([200,100,200]);
+    showNotifBanner('⏱ Study block done!','Take your '+T.brk+' min break. Stand up. Water. No phone.');
+    showTopicPrompt();
+  }else{
+    T.isBreak=false;T.secs=T.study*60;T.max=T.study*60;
+    if('vibrate'in navigator)navigator.vibrate([100,50,100,50,200]);
+    showNotifBanner('💪 Break over!','Back to work. Stay locked in.');
+  }
+  renderTimer();
+}
+function setMode(idx,el){document.querySelectorAll('#screen-session .mode-row:first-of-type .mode-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));T.mode=idx;}
+function pickSubj(s){
+  T.subj=s;
+  ['ph','ch','ma','bi'].forEach(x=>document.getElementById('sj-'+x).className='subj-btn'+(x===s?' sel-'+x:''));
+}
+function setDuration(study,brk,idx){
+  if(T.running)return;
+  document.querySelectorAll('#dur-0,#dur-1,#dur-2').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  T.study=study;T.brk=brk;T.secs=study*60;T.max=study*60;T.isBreak=false;
+  renderTimer();
+}
+function renderTimer(){
+  const m=Math.floor(T.secs/60),s=T.secs%60;
+  document.getElementById('timer-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('timer-display').className='timer-big'+(T.isBreak?' brk':'');
+  document.getElementById('timer-phase').textContent=T.isBreak?'BREAK — STAND UP · WATER · BREATHE':'STUDY BLOCK — STAY FOCUSED';
+  const pct=T.secs/T.max*100;
+  document.getElementById('timer-bar').style.width=pct+'%';
+  document.getElementById('timer-bar').className='timer-progress-fill'+(T.isBreak?' brk':'');
+}
+function toggleSession(){
+  if(T.running){
+    clearInterval(T.iv);T.running=false;
+    document.getElementById('btn-start-stop').textContent='RESUME';
+  }else{
+    if(!T.subj){
+      document.querySelectorAll('.subj-btn').forEach(b=>{b.style.borderColor='var(--amber)';setTimeout(()=>b.style.borderColor='',1500);});
+      return;
+    }
+    T.running=true;T.wallStart=Date.now();T.secsAtPause=T.secs;
+    document.getElementById('btn-start-stop').textContent='PAUSE';
+    T.iv=setInterval(tickTimer,1000);
+  }
+}
+function resetSession(){
+  clearInterval(T.iv);T.running=false;T.isBreak=false;
+  T.secs=T.study*60;T.max=T.study*60;
+  document.getElementById('btn-start-stop').textContent='START SESSION';
+  renderTimer();
+}
+function skipPhase(){
+  clearInterval(T.iv);T.running=false;
+  T.isBreak=!T.isBreak;
+  T.secs=(T.isBreak?T.brk:T.study)*60;T.max=T.secs;
+  document.getElementById('btn-start-stop').textContent='START SESSION';
+  renderTimer();
+}
+
+// ═══ TOPIC PROMPT ═══
+function showTopicPrompt(){
+  document.getElementById('tp-input').value='';
+  document.getElementById('topic-prompt').classList.add('show');
+}
+function dismissTopicPrompt(){document.getElementById('topic-prompt').classList.remove('show');}
+function saveTopicFromPrompt(){
+  const t=document.getElementById('tp-input').value.trim();
+  if(t&&T.subj)saveTopicRevision(t,T.subj);
+  dismissTopicPrompt();
+}
+
+// ═══ SESSION LOG ═══
+function logSession(subj,mode,mins){
+  if(!S.sessions[todayStr])S.sessions[todayStr]=[];
+  const modes=['Deep Work','PW Lecture','DPP/Mock','Revision'];
+  S.sessions[todayStr].push({subj,mode:modes[mode]||'Deep Work',mins,ts:Date.now()});
+  save();renderSessionLog();updateHomeStats();
+}
+function deleteSession(idx){
+  if(!S.sessions[todayStr])return;
+  S.sessions[todayStr].splice(idx,1);
+  save();renderSessionLog();updateHomeStats();
+}
+function renderSessionLog(){
+  const list=document.getElementById('session-log-list');
+  const sesh=S.sessions[todayStr]||[];
+  if(!sesh.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">No sessions today. Start your first block above.</div>';return;}
+  const sn={ph:'Physics',ch:'Chemistry',ma:'Maths',bi:'Biology'};
+  list.innerHTML=[...sesh].reverse().map((s,ri)=>{
+    const realIdx=sesh.length-1-ri;
+    return `<div class="log-item">
+      <div class="log-subj-dot" style="background:var(--${s.subj})"></div>
+      <div class="log-info"><div class="log-main">${sn[s.subj]||s.subj} — ${s.mode}</div><div class="log-sub">${s.topic||'No topic tagged'}</div></div>
+      <div class="log-dur">${s.mins}m</div>
+      <div class="log-del" onclick="confirmDeleteSession(${realIdx})">✕</div>
+    </div>`;
+  }).join('');
+}
+function confirmDeleteSession(idx){
+  showModal('Delete session?','This will remove the session and update your stats.',[
+    {label:'Delete',primary:true,action:()=>deleteSession(idx)},
+    {label:'Cancel',primary:false,action:()=>{}}
+  ]);
+}
+
+// ═══ SPACED REVISION ═══
+function saveTopicRevision(topic,subj){
+  const today=new Date(todayStr);
+  const revDates=[3,7,14].map(d=>{const r=new Date(today);r.setDate(r.getDate()+d);return r.toISOString().split('T')[0];});
+  S.topics.push({topic,subj,date:todayStr,revDates,revDone:[false,false,false]});
+  save();renderRevisionDue();
+}
+function markTopicDone(){
+  const t=document.getElementById('topic-done-input').value.trim();
+  if(!t){return;}
+  if(!T.subj){document.querySelectorAll('.subj-btn').forEach(b=>{b.style.borderColor='var(--amber)';setTimeout(()=>b.style.borderColor='',1500);});return;}
+  saveTopicRevision(t,T.subj);
+  document.getElementById('topic-done-input').value='';
+  const btn=document.querySelector('#screen-session .btn-ghost');
+  const orig=btn.textContent;
+  btn.textContent='✓ Saved! Revision at +3, +7, +14 days';
+  btn.style.color='var(--green)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2500);
+}
+function renderRevisionDue(){
+  const list=document.getElementById('rev-list');
+  const today=new Date(todayStr);
+  const due=[];
+  for(const t of S.topics){
+    for(let i=0;i<t.revDates.length;i++){
+      if(!t.revDone[i]&&new Date(t.revDates[i])<=today)due.push({...t,_ti:S.topics.indexOf(t),_ri:i,_rl:['3-day','7-day','14-day'][i]});
+    }
+  }
+  const sn={ph:'Physics',ch:'Chemistry',ma:'Maths',bi:'Biology'};
+  if(!due.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:4px 0 12px">No revision due. Add topics after sessions.</div>';return;}
+  list.innerHTML=due.map(t=>`<div class="rev-badge" onclick="markRevDone(${t._ti},${t._ri})">
+    <div style="font-size:18px">🔁</div>
+    <div class="rev-info"><div class="rev-topic">${t.topic} <span style="font-size:10px;color:var(--text3)">(${sn[t.subj]})</span></div><div class="rev-due">${t._rl} revision due</div></div>
+    <div class="rev-check">✓</div>
+  </div>`).join('');
+}
+function markRevDone(ti,ri){if(S.topics[ti]){S.topics[ti].revDone[ri]=true;save();renderRevisionDue();}}
+// ═══ HOME SCREEN ═══
+function updateHomeStats(){
+  const dayNum=getDayNum(),dLeft=getDaysLeft();
+  document.getElementById('h-day').innerHTML=dayNum+'<span> of 40</span>';
+  document.getElementById('h-sub').textContent='~'+(dLeft*8)+'h prep time remaining';
+  document.getElementById('ring-days').textContent=dLeft;
+  const progress=Math.max(0,Math.min(1,1-(dLeft/40)));
+  document.getElementById('ring-circle').style.strokeDashoffset=188.5-(188.5*progress);
+  document.getElementById('qs-streak').textContent=getStreak();
+  document.getElementById('qs-hours').textContent=getTodayHours().toFixed(1)+'h';
+  document.getElementById('qs-mocks').textContent=S.mocks.length;
+  ['ph','ch','ma','bi'].forEach(s=>{
+    const ds=daysSince(getLastStudied(s));
+    const pct=Math.max(0,Math.min(100,100-ds*20));
+    document.getElementById('bar-'+s).style.width=pct+'%';
+    document.getElementById('days-'+s).textContent=ds===0?'today':ds===99?'never':ds+'d ago';
+  });
+  const missions=getMissions(dayNum);
+  const saved=S.missions[todayStr]||Array(missions.length).fill(false);
+  const icons={study:'📚',dpp:'📝',revision:'🔁',alert:'⚠️',focus:'🎯'};
+  document.getElementById('mission-items').innerHTML=missions.map((m,i)=>`
+    <div class="mission-item ${saved[i]?'done':''}" onclick="toggleMission(${i})">
+      <div class="mission-check">${saved[i]?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':''}</div>
+      <div style="flex:1"><div class="mission-item-main">${icons[m.type]||'📌'} ${m.text}</div><div class="mission-item-sub">${m.sub}</div></div>
+    </div>`).join('');
+  document.getElementById('mission-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+}
+function toggleMission(idx){
+  if(!S.missions[todayStr])S.missions[todayStr]=[];
+  S.missions[todayStr][idx]=!S.missions[todayStr][idx];
+  save();updateHomeStats();
+}
+
+// ═══ PLAN — uses actual session data for checkmarks ═══
+function renderPlan(){
+  const dayNum=getDayNum();
+  const weekNames=['Week 1 — Foundation','Week 2 — Core P1','Week 3 — P1 Complete + Mock 1','Week 4 — P2 + Revision','Week 5 — Consolidation','Week 6 — Final Sprint'];
+  const tagCls={'P1':'pill pill-red','P2':'pill pill-amber','MOCK':'pill pill-blue','Revision':'pill pill-purple','Analysis':'pill pill-purple','Final':'pill pill-green','PW':'pill pill-blue','PYQ':'pill pill-amber','⚡Key':'pill pill-red','🧘Rest':'pill pill-green'};
+  const studiedDates=new Set(Object.entries(S.sessions).filter(([,v])=>v.length>0).map(([k])=>k));
+  document.getElementById('plan-list').innerHTML=[1,2,3,4,5,6].map(w=>{
+    const days=PLAN.filter(p=>p.w===w);
+    const html=days.map(d=>{
+      const isToday=d.d===dayNum;
+      const planDate=new Date(S.startDate);planDate.setDate(planDate.getDate()+d.d-1);
+      const pds=planDate.toISOString().split('T')[0];
+      const actuallyDone=studiedDates.has(pds)&&!isToday;
+      const isPast=d.d<dayNum;
+      let numTxt=d.d,numCls='';
+      if(isToday){numTxt='▶';numCls='today-num';}
+      else if(actuallyDone){numTxt=d.d+'<span style="color:var(--green);font-size:8px"> ✓</span>';numCls='done-num';}
+      return `<div class="plan-day ${isToday?'today-row':''} ${actuallyDone?'done-row':''}">
+        <div class="plan-day-num ${numCls}">${numTxt}</div>
+        <div class="plan-day-content">
+          <div class="plan-day-title" style="color:${isPast&&!actuallyDone&&!isToday?'var(--text3)':'var(--text)'}">${d.title}</div>
+          <div class="plan-day-sub">${d.sub}</div>
+          <div class="plan-day-tags">${d.tags.map(t=>`<span class="${tagCls[t]||'pill pill-green'}" style="font-size:9px;padding:2px 7px">${t}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="plan-week"><div class="plan-week-header"><div class="pw-title">${weekNames[w-1]}</div><div class="pw-sub">Days ${(w-1)*7+1}–${Math.min(w*7,40)}</div></div>${html}</div>`;
+  }).join('');
+}
+
+// ═══ ANALYTICS ═══
+function renderAnalytics(){
+  let total=0;
+  Object.values(S.sessions).forEach(day=>day.forEach(s=>total+=s.mins||0));
+  document.getElementById('an-hours').textContent=(total/60).toFixed(1);
+  const dayNum=getDayNum(),trackPct=Math.round(total/60/(dayNum*8)*100);
+  const tEl=document.getElementById('an-track');
+  tEl.textContent=isNaN(trackPct)||!isFinite(trackPct)?'—':trackPct+'%';
+  tEl.style.color=trackPct>=80?'var(--green)':trackPct>=55?'var(--amber)':'var(--red)';
+  const bars=document.getElementById('hours-bars');
+  const days10=[];
+  for(let i=9;i>=0;i--){
+    const d=new Date(todayStr);d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    days10.push({ds,hrs:(S.sessions[ds]||[]).reduce((a,b)=>a+(b.mins||0),0)/60,lbl:d.getDate()});
+  }
+  const mx=Math.max(8,...days10.map(d=>d.hrs));
+  bars.innerHTML=days10.map(d=>{
+    const pct=Math.round(d.hrs/mx*100);
+    const it=d.ds===todayStr;
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%">
+      <div style="flex:1;display:flex;align-items:flex-end;width:100%"><div style="width:100%;height:${Math.max(2,pct)}%;background:${it?'var(--green)':'var(--bg3)'};border-radius:3px 3px 0 0;border:1px solid ${it?'var(--green)':'var(--border)'}"></div></div>
+      <div style="font-size:8px;color:${it?'var(--green)':'var(--text3)'};font-family:var(--mono)">${d.lbl}</div>
+    </div>`;
+  }).join('');
+  const lm=S.mocks[S.mocks.length-1];
+  ['ph','ch','ma','bi'].forEach(s=>{
+    const v=lm?lm[s]:null;
+    document.getElementById('sc-'+s).textContent=v??'—';
+    document.getElementById('scb-'+s).style.width=v?(v/60*100)+'%':'0%';
+  });
+  const ml=document.getElementById('mock-log-list');
+  ml.innerHTML=S.mocks.length?S.mocks.map((m,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text3);font-family:var(--mono)">Mock ${i+1} · ${m.date}</span>
+      <span style="font-family:var(--mono);font-weight:700;color:${m.total>=185?'var(--green)':m.total>=130?'var(--amber)':'var(--red)'}">${m.total}/240</span>
+      <span style="color:var(--text3);font-size:10px">P:${m.ph} C:${m.ch} M:${m.ma} B:${m.bi}</span>
+    </div>`).join(''):'No mocks logged yet.';
+  const hm=document.getElementById('heatmap');
+  let cells='';
+  for(let i=1;i<=40;i++){
+    const d=new Date(S.startDate);d.setDate(d.getDate()+i-1);
+    const ds=d.toISOString().split('T')[0];
+    const hrs=(S.sessions[ds]||[]).reduce((a,b)=>a+(b.mins||0),0)/60;
+    const iT=ds===todayStr,iF=d>new Date(todayStr);
+    let cls='hm-cell'+(iT?' today':'')+(iF?' future':hrs>=6?' done':hrs>0?' partial':'');
+    cells+=`<div class="${cls}" title="Day ${i}: ${hrs.toFixed(1)}h">${i}</div>`;
+  }
+  hm.innerHTML=cells;
+}
+function logMock(){
+  const clamp=id=>Math.min(60,Math.max(0,parseInt(document.getElementById(id).value)||0));
+  const ph=clamp('mp-ph'),ch=clamp('mp-ch'),ma=clamp('mp-ma'),bi=clamp('mp-bi');
+  if(!ph&&!ch&&!ma&&!bi)return;
+  S.mocks.push({date:todayStr,ph,ch,ma,bi,total:ph+ch+ma+bi});
+  save();['mp-ph','mp-ch','mp-ma','mp-bi'].forEach(id=>document.getElementById(id).value='');
+  renderAnalytics();
+}
+// Score predictor — capped at 60
+function quickPredict(){
+  const clamp=id=>Math.min(60,Math.max(0,parseInt(document.getElementById(id).value)||0));
+  const ph=clamp('qp-ph'),ch=clamp('qp-ch'),ma=clamp('qp-ma'),bi=clamp('qp-bi');
+  const total=ph+ch+ma+bi;
+  if(!total){document.getElementById('pred-result-home').style.display='none';return;}
+  let rank,col,emoji;
+  if(total>=185){rank='Top 300 — Very high chance ✈️ IISER';col='var(--green)';emoji='🏆';}
+  else if(total>=160){rank='Rank ~300–1200 — High chance';col='var(--green)';emoji='💪';}
+  else if(total>=130){rank='Rank ~1200–3500 — Moderate';col='var(--amber)';emoji='⚡';}
+  else if(total>=100){rank='Rank ~3500–7000 — Low';col='var(--amber)';emoji='⚠️';}
+  else{rank='Below 7000 — Serious catch-up needed';col='var(--red)';emoji='🚨';}
+  const el=document.getElementById('pred-result-home');
+  el.style.display='block';
+  el.innerHTML=`<div class="pred-total" style="color:${col}">${emoji} ${total}</div><div style="font-size:14px;color:${col};margin-top:4px">${rank}</div><div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:var(--mono)">${Math.round(total/240*100)}% of maximum 240</div>`;
+}
+// ═══ CHECK-IN ═══
+let ciState={mood:0,focus:'',pw:null};
+function setMood(level,btn){
+  ciState.mood=level;
+  document.querySelectorAll('.mood-opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function pickFocus(subj,el){
+  ciState.focus=subj;
+  document.querySelectorAll('#screen-coach .wsp').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function setPW(val){
+  ciState.pw=val;
+  ['pw-yes','pw-no','pw-partial'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const map={true:'pw-yes',false:'pw-no',partial:'pw-partial'};
+  document.getElementById(map[val]).classList.add('active');
+}
+function submitCheckin(){
+  if(!ciState.mood)return;
+  S.checkins[todayStr]={...ciState};
+  if(ciState.focus)S.focusTomorrow=ciState.focus;
+  save();
+  const msgs={
+    5:['ca-green','Peak day. Tomorrow: attack your hardest topic first thing — Modern Physics, Organic, or Calculus. Use this momentum.'],
+    4:['ca-green','Solid session. Tomorrow: do DPP before any lecture — you\'re in the right state to apply, not just absorb.'],
+    3:['ca-amber','Okay is fine. Tomorrow: start before you feel ready. One problem first. Momentum follows action.'],
+    2:['ca-amber','Tired but not out. Tomorrow: lighter morning — formula review, NCERT reading. Deep work in afternoon only.'],
+    1:['ca-red','Burnt out. Tomorrow start at 10am, not 6am. 6h of real focus beats 10h of staring at notes.'],
+  };
+  const [cls,msg]=msgs[ciState.mood]||['ca-amber','Keep going.'];
+  const adv=document.getElementById('checkin-advice');
+  adv.style.display='block';adv.className='checkin-advice '+cls;adv.textContent=msg;
+  updateHomeStats();
+}
+
+// ═══ AI COACH — conversation memory ═══
+function buildContext(){
+  const dayNum=getDayNum(),dLeft=getDaysLeft();
+  const totalMins=Object.values(S.sessions).reduce((a,d)=>a+d.reduce((b,s)=>b+(s.mins||0),0),0);
+  const lm=S.mocks[S.mocks.length-1];
+  const subAct=['ph','ch','ma','bi'].map(s=>s.toUpperCase()+':'+daysSince(getLastStudied(s))+'d ago').join(', ');
+  const revDue=S.topics.filter(t=>t.revDates.some((d,i)=>!t.revDone[i]&&new Date(d)<=new Date(todayStr))).length;
+  return `You are a sharp, direct IAT 2026 prep coach. No fluff. Be like a firm coach who genuinely wants this student to crack IISER.
+Student: ${S.name||'Student'} | Day ${dayNum}/40 | ${dLeft} days to exam (Jun 7 2026)
+Total study: ${(totalMins/60).toFixed(1)}h | Weak subject: ${S.weakSubj} | Revision overdue: ${revDue}
+Subject last studied: ${subAct}
+Last mock: ${lm?lm.total+'/240 (Ph:'+lm.ph+' Ch:'+lm.ch+' Ma:'+lm.ma+' Bi:'+lm.bi+')':'None yet'}
+Today mood: ${S.checkins[todayStr]?.mood||'not submitted'} | Enrolled: PW Vidyapeeth
+IAT format: 60 MCQs (15/subject) · +4/−1 · 240 max · 3h · Selection ~1.5% · Cutoff ~130–160 · NCERT-based
+Reply in 2–4 sharp punchy sentences. No bullet points unless listing topics.`;
+}
+
+async function askCoach(customPrompt){
+  const inp=document.getElementById('ai-input');
+  const q=customPrompt||inp.value.trim();
+  if(!q)return;
+  inp.value='';
+  S.chatHistory.push({role:'user',content:q});
+  save();
+  renderChatHistory();
+  const hist=document.getElementById('ai-chat-history');
+  const ld=document.createElement('div');
+  ld.className='ai-msg assistant';
+  ld.innerHTML='<div class="ai-loading"><div class="ai-dot-anim"></div><div class="ai-dot-anim"></div><div class="ai-dot-anim"></div></div>';
+  hist.appendChild(ld);hist.scrollTop=hist.scrollHeight;
+  const recent=S.chatHistory.slice(-12);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:buildContext(),
+        messages:recent
+      })
+    });
+    const data=await res.json();
+    const reply=data.content?.find(c=>c.type==='text')?.text||'No response. Check connection.';
+    S.chatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    S.chatHistory.push({role:'assistant',content:'Coach is offline right now. Check your internet and try again.'});
+  }
+  save();renderChatHistory();
+}
+function renderChatHistory(){
+  const hist=document.getElementById('ai-chat-history');
+  if(!S.chatHistory.length){
+    hist.innerHTML='<div class="ai-msg assistant">Ask me anything about your prep — strategy, motivation, specific topics, what to prioritise today.</div>';
+    return;
+  }
+  hist.innerHTML=S.chatHistory.map(m=>`<div class="ai-msg ${m.role}">${m.content.replace(/\n/g,'<br>')}</div>`).join('');
+  hist.scrollTop=hist.scrollHeight;
+}
+function clearChat(){
+  showModal('Clear chat history?','All previous coach messages will be removed.',[
+    {label:'Clear chat',primary:true,action:()=>{S.chatHistory=[];save();renderChatHistory();}},
+    {label:'Cancel',primary:false,action:()=>{}}
+  ]);
+}
+function quickAsk(q){document.getElementById('ai-input').value=q;askCoach(q);}
+
+// ═══ FORMULA VAULT ═══
+let formulaFilter='all';
+function setFormulaFilter(subj,btn){
+  formulaFilter=subj;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  searchFormulas(document.getElementById('formula-inp').value||'');
+}
+function searchFormulas(q=''){
+  const ql=q.toLowerCase();
+  const list=document.getElementById('formula-list');
+  const rgb={ph:'77,158,255',ch:'34,201,122',ma:'167,139,250',bi:'245,166,35'};
+  const filtered=FORMULAS.filter(f=>{
+    const ms=formulaFilter==='all'||f.subj===formulaFilter;
+    const mq=!ql||f.eq.toLowerCase().includes(ql)||f.name.toLowerCase().includes(ql)||f.tag.toLowerCase().includes(ql);
+    return ms&&mq;
+  });
+  list.innerHTML=filtered.length
+    ?filtered.map(f=>`<div class="formula-item visible">
+      <span class="formula-tag" style="background:rgba(${rgb[f.subj]},0.1);color:var(--${f.subj})">${f.tag}</span>
+      <div class="formula-eq">${f.eq}</div>
+      <div class="formula-name">${f.name}</div>
+    </div>`).join('')
+    :'<div style="font-size:12px;color:var(--text3);padding:8px">No formulas found.</div>';
+}
+
+// ═══ NOTIFICATIONS ═══
+function showNotifBanner(title,body){
+  if(typeof Notification!=='undefined'&&Notification.permission==='granted'){
+    new Notification(title,{body,icon:'./icon-192.png'});
+  }
+}
+
+// ═══ NAVIGATION ═══
+function goScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  document.getElementById('app').scrollTo(0,0);
+  if(name==='analytics')renderAnalytics();
+  if(name==='plan')renderPlan();
+  if(name==='coach'){searchFormulas();renderChatHistory();}
+  if(name==='session')renderSessionLog();
+}
+
+// ═══ INIT ═══
+function initApp(){
+  updateHomeStats();
+  renderRevisionDue();
+  renderTimer();
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  S.lastOpen=S.lastOpen||todayStr;
+  if(S.lastOpen!==todayStr){T.sessions=0;T.focusMin=0;}
+  S.lastOpen=todayStr;save();
+  // Evening check-in — modal instead of confirm()
+  const hour=new Date().getHours();
+  if(hour>=20&&!S.checkins[todayStr]){
+    setTimeout(()=>{
+      showModal('📊 Evening Check-in',"It's time for your daily 60-second check-in. Get tomorrow's personalised plan.",[
+        {label:'Do check-in now',primary:true,action:()=>goScreen('coach')},
+        {label:'Later',primary:false,action:()=>{}}
+      ]);
+    },2000);
+  }
+}
+
+loadState();
+if(S.onboarded){
+  document.getElementById('onboarding').style.display='none';
+  initApp();
+}else{
+  document.getElementById('ob-startdate').value=todayStr;
+}
+</script>
+</body>
+</html>
